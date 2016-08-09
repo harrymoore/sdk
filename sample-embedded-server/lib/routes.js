@@ -36,12 +36,54 @@ var apiHandler = function(req, res, next) {
             })
         })
     }
+    else if (req.url.indexOf("/api/get/") > -1)
+    {
+        var id = req.url.substr(9)
+        var myNodes = [];
+        req.branch(function(err, branch) {
+            branch.trap(function(err) {
+                return res.status(500).json(err);
+            }).queryNodes({"_doc": id})
+            .each(function() {
+                var node = this;
+                cloudcmsUtil.enhanceNode(node);
+                myNodes.push(node);
+            }).then(function() {
+                return res.status(200).json(myNodes[0]);
+            });
+        })
+    }
+    else if (req.url === "/touch")
+    {
+        req.branch(function(err, branch) {
+            branch.trap(function(err) {
+                return res.status(500).json(err);
+            }).queryNodes({"_type": "custom:article0"},{"limit": -1})
+            .each(function() {
+                this.touch();
+            }).then(function() {
+                return res.status(200).json(this);
+            });
+        })
+        
+    }
+    else if (req.url === "/update")
+    {
+        req.branch(function(err, branch) {
+            branch.trap(function(err) {
+                return res.status(500).json(err);
+            }).queryNodes({"_type": "custom:article0"},{"limit": -1})
+            .each(function() {
+                this["now"] = new Date().getTime();
+                this.update();
+            }).then(function() {
+                return res.status(200).json(this);
+            });
+        })
+        
+    }
     else
     {
         next();
     }
 };
-
-
-
-
